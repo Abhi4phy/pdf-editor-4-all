@@ -1,0 +1,95 @@
+"""Tests for advanced PDF operations."""
+
+from __future__ import annotations
+
+import os
+
+import PyPDF2
+import pytest
+
+from pdf_editor.operations.advanced import (
+    add_bookmarks,
+    add_header_footer,
+    add_page_numbers,
+    compress_pdf,
+    get_bookmarks,
+    split_pdf,
+)
+
+
+@pytest.fixture
+def sample_pdf(tmp_path) -> str:
+    path = str(tmp_path / "sample.pdf")
+    writer = PyPDF2.PdfWriter()
+    for _ in range(3):
+        writer.add_blank_page(width=612, height=792)
+    with open(path, "wb") as f:
+        writer.write(f)
+    return path
+
+
+class TestCompress:
+    def test_compress_creates_output(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "compressed.pdf")
+        result = compress_pdf(sample_pdf, out)
+        assert os.path.isfile(out)
+        assert result["output"] == out
+        assert result["original_kb"] > 0
+        assert result["compressed_kb"] > 0
+        assert isinstance(result["reduction_pct"], float)
+
+    def test_compress_quality_levels(self, sample_pdf, tmp_path):
+        for quality in ("low", "medium", "high"):
+            out = str(tmp_path / f"compressed_{quality}.pdf")
+            result = compress_pdf(sample_pdf, out, quality=quality)
+            assert os.path.isfile(out)
+            assert isinstance(result["reduction_pct"], float)
+
+
+class TestSplit:
+    def test_split_creates_pages(self, sample_pdf, tmp_path):
+        out_dir = str(tmp_path / "pages")
+        paths = split_pdf(sample_pdf, out_dir)
+        assert len(paths) == 3
+        for p in paths:
+            assert os.path.isfile(p)
+            reader = PyPDF2.PdfReader(p)
+            assert len(reader.pages) == 1
+
+
+class TestPageNumbers:
+    def test_add_page_numbers(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "numbered.pdf")
+        add_page_numbers(sample_pdf, out)
+        assert os.path.isfile(out)
+        reader = PyPDF2.PdfReader(out)
+        assert len(reader.pages) == 3
+
+
+class TestHeaderFooter:
+    def test_add_header_only(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "headered.pdf")
+        add_header_footer(sample_pdf, out, header_text="Test Header")
+        assert os.path.isfile(out)
+
+    def test_add_both(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "hf.pdf")
+        add_header_footer(sample_pdf, out, header_text="Header", footer_text="Footer")
+        assert os.path.isfile(out)
+
+    def test_no_text_raises(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "empty.pdf")
+        with pytest.raises(ValueError, match="At least one"):
+            add_header_footer(sample_pdf, out)
+
+
+class TestBookmarks:
+    def test_add_and_read_bookmarks(self, sample_pdf, tmp_path):
+        out = str(tmp_path / "bookmarked.pdf")
+        bms = [{"title": "Chapter 1", "page": 1}, {"title": "Chapter 2", "page": 2}]
+        add_bookmarks(sample_pdf, out, bms)
+        assert os.path.isfile(out)
+
+        result = get_bookmarks(out)
+        assert len(result) == 2
+        assert result[0]["title"] == "Chapter 1"

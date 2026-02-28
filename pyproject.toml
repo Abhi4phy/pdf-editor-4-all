@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-editor-4-all"
+version = "1.0.0"
+description = "A feature-rich PDF editor for everyone — merge, split, compress, encrypt, convert, watermark, and more."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+    { name = "abhi4phy" },
+]
+keywords = ["pdf", "editor", "merge", "split", "compress", "encrypt", "convert", "watermark"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "PyPDF2>=3.0.0",
+    "ttkbootstrap>=1.10.0",
+    "pdf2docx>=0.5.6",
+    "docx2pdf>=0.1.8",
+    "Pillow>=10.0.0",
+    "PyMuPDF>=1.23.0",
+    "pikepdf>=8.0.0",
+    "reportlab>=4.0.0",
+    "pdfrw>=0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/abhi4phy/pdf-editor-4-all"
+Repository = "https://github.com/abhi4phy/pdf-editor-4-all"
+Issues = "https://github.com/abhi4phy/pdf-editor-4-all/issues"
+
+[project.scripts]
+pdf-editor = "pdf_editor.__main__:main"
+
+[project.gui-scripts]
+pdf-editor-gui = "pdf_editor.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,15 @@
+# Core dependencies
+PyPDF2>=3.0.0
+ttkbootstrap>=1.10.0
+pdf2docx>=0.5.6
+docx2pdf>=0.1.8
+Pillow>=10.0.0
+PyMuPDF>=1.23.0
+pikepdf>=8.0.0
+reportlab>=4.0.0
+pdfrw>=0.4
+
+# Development dependencies
+pytest>=7.0
+pytest-cov>=4.0
+ruff>=0.1.0
