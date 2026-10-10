@@ -242,3 +242,250 @@ def get_comparison_images(file_a: str, file_b: str, page: int, zoom: float = 1.0
     doc_b.close()
 
     return img_a, img_b
+
+
+# ── In-Place Text Editing ───────────────────────────────────────────────────
+
+def _resolve_font_name(bold: bool = False, italic: bool = False) -> str:
+    if bold and italic:
+        return "Helvetica-BoldOblique"
+    elif bold:
+        return "Helvetica-Bold"
+    elif italic:
+        return "Helvetica-Oblique"
+    return "Helvetica"
+
+
+@validate_input_file
+@ensure_output_dir
+def replace_text_in_pdf(
+    input_file: str,
+    output_file: str,
+    search_str: str,
+    replace_str: str,
+    page_num: Optional[int] = None,
+    font_size: Optional[float] = None,
+    bold: bool = False,
+    italic: bool = False,
+    strikethrough: bool = False,
+    font_color: tuple[float, float, float] = (0, 0, 0),
+) -> int:
+    """Replace occurrences of text in-place with optional bold, italic, strikethrough formatting.
+
+    Parameters
+    ----------
+    bold : bool
+        Apply bold font weight.
+    italic : bool
+        Apply italic font style.
+    strikethrough : bool
+        Draw strikethrough (cross-out) line across replacement text.
+    """
+    if not search_str:
+        raise ValueError("Search string cannot be empty.")
+
+    doc = fitz.open(input_file)
+    total_replacements = 0
+    fontname = _resolve_font_name(bold=bold, italic=italic)
+
+    try:
+        pages = [page_num - 1] if page_num is not None else range(doc.page_count)
+
+        for p_idx in pages:
+            if not (0 <= p_idx < doc.page_count):
+                continue
+            page = doc[p_idx]
+            rects = page.search_for(search_str)
+            if not rects:
+                continue
+
+            replacements = []
+            for rect in rects:
+                clip_dict = page.get_text("dict", clip=rect)
+                detected_size = 11.0
+                origin_y = None
+
+                if clip_dict and "blocks" in clip_dict:
+                    for b in clip_dict["blocks"]:
+                        if "lines" in b:
+                            for l in b["lines"]:
+                                for s in l["spans"]:
+                                    if s.get("text", "").strip():
+                                        detected_size = s["size"]
+                                        origin_y = s["origin"][1]
+                                        break
+                                if origin_y is not None:
+                                    break
+                        if origin_y is not None:
+                            break
+
+                final_size = font_size if (font_size and font_size > 0) else detected_size
+                final_y = origin_y if origin_y is not None else (rect.y0 + final_size * 0.85)
+                replacements.append((rect, rect.x0, final_y, final_size))
+
+            # Apply redactions to erase original text stream
+            for rect, _, _, _ in replacements:
+                page.add_redact_annot(rect, fill=(1, 1, 1))
+            page.apply_redactions()
+
+            # Insert replacement text at exact baseline origin
+            for _, x_pos, y_pos, f_sz in replacements:
+                page.insert_text((x_pos, y_pos), replace_str, fontsize=f_sz, fontname=fontname, color=font_color)
+                if strikethrough and replace_str:
+                    text_w = fitz.get_text_length(replace_str, fontname=fontname, fontsize=f_sz)
+                    y_mid = y_pos - f_sz * 0.35
+                    page.draw_line((x_pos, y_mid), (x_pos + text_w, y_mid), color=font_color, width=1.5)
+                total_replacements += 1
+
+        doc.save(output_file)
+    finally:
+        doc.close()
+
+    logger.info("In-place replaced %d instances of '%s' -> '%s'", total_replacements, search_str, replace_str)
+    return total_replacements
+
+
+@validate_input_file
+@ensure_output_dir
+def edit_text_region(
+    input_file: str,
+    output_file: str,
+    page_num: int,
+    rect: tuple[float, float, float, float],
+    new_text: str,
+    font_size: Optional[float] = None,
+    bold: bool = False,
+    italic: bool = False,
+    strikethrough: bool = False,
+    font_color: tuple[float, float, float] = (0, 0, 0),
+) -> str:
+    """In-place edit a specific rectangular region on a PDF page with optional bold, italic, strikethrough formatting."""
+    doc = fitz.open(input_file)
+    fontname = _resolve_font_name(bold=bold, italic=italic)
+
+    try:
+        if not (1 <= page_num <= doc.page_count):
+            raise ValueError(f"Invalid page number {page_num}.")
+
+        page = doc[page_num - 1]
+        r = fitz.Rect(rect)
+
+        # Inspect existing text spans to extract baseline origin & font size
+        clip_dict = page.get_text("dict", clip=r)
+        detected_size = 11.0
+        origin_y = None
+
+        if clip_dict and "blocks" in clip_dict:
+            for b in clip_dict["blocks"]:
+                if "lines" in b:
+                    for l in b["lines"]:
+                        for s in l["spans"]:
+                            if s.get("text", "").strip():
+                                detected_size = s["size"]
+                                origin_y = s["origin"][1]
+                                break
+                        if origin_y is not None:
+                            break
+                if origin_y is not None:
+                    break
+
+        final_size = font_size if (font_size and font_size > 0) else detected_size
+
+        # 1. Erase old vector text stream
+        page.add_redact_annot(r, fill=(1, 1, 1))
+        page.apply_redactions()
+
+        # 2. Insert new text at exact baseline origin
+        if new_text.strip():
+            lines = new_text.split("\n")
+            start_y = origin_y if origin_y is not None else (r.y0 + final_size * 0.85)
+            for i, line in enumerate(lines):
+                if line:
+                    line_y = start_y + i * (final_size * 1.25)
+                    page.insert_text((r.x0, line_y), line, fontsize=final_size, fontname=fontname, color=font_color)
+                    if strikethrough:
+                        text_w = fitz.get_text_length(line, fontname=fontname, fontsize=final_size)
+                        y_mid = line_y - final_size * 0.35
+                        page.draw_line((r.x0, y_mid), (r.x0 + text_w, y_mid), color=font_color, width=1.5)
+
+        doc.save(output_file)
+    finally:
+        doc.close()
+
+    logger.info("Edited text region on page %d in-place -> %s", page_num, output_file)
+    return output_file
+
+
+
+
+# ── Page-Level Visual Merging & Thumbnails ──────────────────────────────────
+
+def get_page_thumbnail(pdf_path: str, page_num: int = 1, width: int = 160) -> Image.Image:
+    """Render a PIL thumbnail of a specific PDF page.
+
+    Parameters
+    ----------
+    pdf_path : str
+        Source PDF.
+    page_num : int
+        1-based page number.
+    width : int
+        Target pixel width of the thumbnail.
+    """
+    doc = fitz.open(pdf_path)
+    try:
+        if not (1 <= page_num <= doc.page_count):
+            raise ValueError(f"Invalid page {page_num}")
+        page = doc[page_num - 1]
+        rect = page.rect
+        zoom = width / rect.width if rect.width > 0 else 1.0
+        mat = fitz.Matrix(zoom, zoom)
+        pix = page.get_pixmap(matrix=mat)
+        return Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    finally:
+        doc.close()
+
+
+@ensure_output_dir
+def merge_pdf_pages(page_specs: List[Dict], output_file: str) -> str:
+    """Merge custom list of pages (from same or different PDFs) with individual rotations.
+
+    Parameters
+    ----------
+    page_specs : list[dict]
+        Each dict has:
+        - ``file``: path to PDF
+        - ``page``: 1-based page number
+        - ``rotation``: optional extra rotation angle (0, 90, 180, 270)
+    """
+    if not page_specs:
+        raise ValueError("No pages specified for merging.")
+
+    out_doc = fitz.open()
+    try:
+        for spec in page_specs:
+            src_file = spec["file"]
+            p_num = spec.get("page", 1)
+            rot = spec.get("rotation", 0)
+
+            if not os.path.isfile(src_file):
+                raise FileNotFoundError(f"File not found: {src_file}")
+
+            src_doc = fitz.open(src_file)
+            if not (1 <= p_num <= src_doc.page_count):
+                src_doc.close()
+                raise ValueError(f"Page {p_num} out of range for {src_file}")
+
+            # Insert page into out_doc
+            out_doc.insert_pdf(src_doc, from_page=p_num - 1, to_page=p_num - 1)
+            if rot:
+                out_doc[-1].set_rotation((out_doc[-1].rotation + rot) % 360)
+            src_doc.close()
+
+        out_doc.save(output_file)
+    finally:
+        out_doc.close()
+
+    logger.info("Merged %d pages visually -> %s", len(page_specs), output_file)
+    return output_file
+

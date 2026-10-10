@@ -93,3 +93,70 @@ class TestBookmarks:
         result = get_bookmarks(out)
         assert len(result) == 2
         assert result[0]["title"] == "Chapter 1"
+
+
+class TestInPlaceEditing:
+    def test_replace_text_in_pdf(self, tmp_path):
+        import fitz
+        from pdf_editor.operations.extras import replace_text_in_pdf
+
+        pdf_path = str(tmp_path / "test_text.pdf")
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((100, 100), "Hello PyMuPDF test")
+        doc.save(pdf_path)
+        doc.close()
+
+        out_path = str(tmp_path / "test_replaced.pdf")
+        count = replace_text_in_pdf(pdf_path, out_path, "PyMuPDF", "World")
+        assert count == 1
+        assert os.path.isfile(out_path)
+
+        doc_res = fitz.open(out_path)
+        res_text = doc_res[0].get_text()
+        doc_res.close()
+        assert "World" in res_text
+
+    def test_edit_text_region(self, tmp_path):
+        import fitz
+        from pdf_editor.operations.extras import edit_text_region
+
+        pdf_path = str(tmp_path / "test_region.pdf")
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((100, 100), "Original Text Region")
+        doc.save(pdf_path)
+        doc.close()
+
+        out_path = str(tmp_path / "test_region_edited.pdf")
+        edit_text_region(pdf_path, out_path, 1, (90, 80, 250, 120), "New Region Content")
+        assert os.path.isfile(out_path)
+
+        doc_res = fitz.open(out_path)
+        res_text = doc_res[0].get_text()
+        doc_res.close()
+        assert "New Region Content" in res_text
+
+
+class TestVisualMerge:
+    def test_merge_pdf_pages(self, sample_pdf, tmp_path):
+        import fitz
+        from pdf_editor.operations.extras import get_page_thumbnail, merge_pdf_pages
+
+        thumb = get_page_thumbnail(sample_pdf, 1, width=100)
+        assert thumb is not None
+        assert thumb.width == 100
+
+        out_path = str(tmp_path / "visually_merged.pdf")
+        specs = [
+            {"file": sample_pdf, "page": 1, "rotation": 90},
+            {"file": sample_pdf, "page": 3, "rotation": 0},
+        ]
+        merge_pdf_pages(specs, out_path)
+        assert os.path.isfile(out_path)
+
+        doc = fitz.open(out_path)
+        assert doc.page_count == 2
+        assert doc[0].rotation == 90
+        doc.close()
+
