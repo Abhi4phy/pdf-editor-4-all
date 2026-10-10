@@ -83,10 +83,16 @@ class VisualMergeTab(ttk.Frame):
             widget.destroy()
 
         if not self.items:
+            empty_frame = ttk.Frame(self.grid_frame, padding=30)
+            empty_frame.pack(fill=tk.BOTH, expand=True)
             ttk.Label(
-                self.grid_frame, text="No PDF pages added yet. Click '+ Add PDF Files' above.",
-                font=("Segoe UI", 11), foreground="gray"
-            ).pack(padx=20, pady=40)
+                empty_frame, text="🔀 Visual PDF Merge Workspace",
+                font=("Segoe UI", 14, "bold"), bootstyle="primary"
+            ).pack(pady=(10, 4))
+            ttk.Label(
+                empty_frame, text="No PDF pages loaded yet.\nClick '+ Add PDF Files' above or drag & drop PDF files onto the window to begin.",
+                font=("Segoe UI", 10), justify=tk.CENTER, bootstyle="info"
+            ).pack(pady=4)
             return
 
         cols = 4
@@ -94,7 +100,7 @@ class VisualMergeTab(ttk.Frame):
             r = idx // cols
             c = idx % cols
 
-            card = ttk.LabelFrame(self.grid_frame)
+            card = ttk.LabelFrame(self.grid_frame, text=f" #{idx + 1} ")
             card.grid(row=r, column=c, padx=6, pady=6, sticky="nsew")
 
             card_inner = ttk.Frame(card, padding=4)
@@ -109,16 +115,16 @@ class VisualMergeTab(ttk.Frame):
                 lbl_img._photo = photo
                 lbl_img.pack(pady=2)
             except Exception:
-                ttk.Label(card_inner, text="[Thumbnail error]", font=("Segoe UI", 8)).pack(pady=10)
+                ttk.Label(card_inner, text="[Thumbnail Error]", font=("Segoe UI", 8)).pack(pady=10)
 
             fname = os.path.basename(item["file"])
             if len(fname) > 18:
                 fname = fname[:15] + "..."
-            rot_str = f" ({item['rotation']}°)" if item['rotation'] else ""
+            rot_str = f" • {item['rotation']}°" if item['rotation'] else ""
             ttk.Label(
                 card_inner, text=f"{fname}\nPage {item['page']}{rot_str}",
                 font=("Segoe UI", 8, "bold"), justify=tk.CENTER
-            ).pack()
+            ).pack(pady=(2, 4))
 
             btn_row = ttk.Frame(card_inner)
             btn_row.pack(pady=2)

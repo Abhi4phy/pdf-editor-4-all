@@ -25,40 +25,70 @@ class AdvancedTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        # Compress Section
-        comp_frame = ttk.LabelFrame(self, text="Compress PDF")
-        comp_frame.pack(fill=tk.X, pady=5)
+        from pdf_editor.gui.components.cards import build_card_grid
+
+        # Compress Card Section
+        comp_frame = ttk.LabelFrame(self, text="📦 PDF File Compression")
+        comp_frame.pack(fill=tk.X, pady=(0, 6))
 
         comp_inner = ttk.Frame(comp_frame, padding=10)
         comp_inner.pack(fill=tk.X)
 
         quality_row = ttk.Frame(comp_inner)
         quality_row.pack(fill=tk.X, pady=(0, 4))
-        ttk.Label(quality_row, text="Quality:").pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Label(quality_row, text="Compression Preset:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(0, 8))
 
-        for val, label in [("low", "Low"), ("medium", "Medium"), ("high", "High")]:
+        for val, label in [("low", "Low (Fast, Lossless)"), ("medium", "Medium (Balanced 150 DPI)"), ("high", "High (Max 96 DPI)")]:
             rb = ttk.Radiobutton(quality_row, text=label, variable=self.compress_quality_var, value=val)
-            rb.pack(side=tk.LEFT, padx=4)
+            rb.pack(side=tk.LEFT, padx=6)
 
         ttk.Label(
             comp_inner, textvariable=self.compress_desc_var,
-            font=("Segoe UI", 9, "italic"), foreground="gray"
-        ).pack(anchor=tk.W, pady=(0, 4))
+            font=("Segoe UI", 8, "italic"), bootstyle="info"
+        ).pack(anchor=tk.W, pady=(2, 6))
         self.compress_quality_var.trace_add("write", self._on_compress_quality_change)
 
-        ttk.Button(comp_inner, text="Compress PDF", command=self.on_compress, style="info.TButton").pack(fill=tk.X, pady=2)
+        ttk.Button(comp_inner, text="Compress PDF File", command=self.on_compress, bootstyle="info", width=20).pack(anchor=tk.W)
 
-        # Other Operations Section
-        other_frame = ttk.LabelFrame(self, text="Other Advanced Operations")
-        other_frame.pack(fill=tk.X, pady=5)
+        # Advanced Tools Grid
+        ttk.Label(self, text="Advanced Document Structure & Formatting Tools", font=("Segoe UI", 10, "bold")).pack(anchor=tk.W, pady=(8, 4))
 
-        other_inner = ttk.Frame(other_frame, padding=10)
-        other_inner.pack(fill=tk.X)
+        cards_data = [
+            {
+                "title": "Add Page Numbers",
+                "description": "Automatically insert clean page numbers (Page X of Y) at bottom center of every page.",
+                "button_text": "Number Pages",
+                "command": self.on_page_numbers,
+                "icon": "🔢",
+                "bootstyle": "info",
+            },
+            {
+                "title": "Header & Footer",
+                "description": "Insert custom header text top-left and footer text bottom-left across document pages.",
+                "button_text": "Add Header/Footer",
+                "command": self.on_header_footer,
+                "icon": "🏷️",
+                "bootstyle": "info",
+            },
+            {
+                "title": "Split PDF",
+                "description": "Split every page of a multi-page PDF document into individual single-page PDF files.",
+                "button_text": "Split PDF",
+                "command": self.on_split,
+                "icon": "📂",
+                "bootstyle": "info",
+            },
+            {
+                "title": "Manage Bookmarks",
+                "description": "View existing PDF outline bookmarks and add new structured chapter/section jump bookmarks.",
+                "button_text": "Bookmarks",
+                "command": self.on_manage_bookmarks,
+                "icon": "🔖",
+                "bootstyle": "info",
+            },
+        ]
 
-        ttk.Button(other_inner, text="Add Page Numbers", command=self.on_page_numbers, style="info.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(other_inner, text="Add Header / Footer", command=self.on_header_footer, style="info.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(other_inner, text="Split PDF", command=self.on_split, style="info.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(other_inner, text="Manage Bookmarks", command=self.on_manage_bookmarks, style="info.TButton").pack(fill=tk.X, pady=2)
+        build_card_grid(self, cards_data, columns=2)
 
     def _on_compress_quality_change(self, *_args) -> None:
         descriptions = {
@@ -140,7 +170,13 @@ class AdvancedTab(ttk.Frame):
 
         lb_frame = ttk.Frame(bm_win)
         lb_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
-        lb = tk.Listbox(lb_frame, height=10)
+        is_dark = (ttk.Style().theme.name == "darkly")
+        lb = tk.Listbox(
+            lb_frame, height=10,
+            bg="#1e1e1e" if is_dark else "#ffffff",
+            fg="#ffffff" if is_dark else "#000000",
+            selectbackground="#0d6efd", selectforeground="#ffffff"
+        )
         sb = ttk.Scrollbar(lb_frame, orient=tk.VERTICAL, command=lb.yview)
         lb.config(yscrollcommand=sb.set)
         lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

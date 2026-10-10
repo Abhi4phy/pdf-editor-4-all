@@ -23,36 +23,51 @@ class BasicTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        frame = ttk.LabelFrame(self, text="Common Tasks")
-        frame.pack(fill=tk.X, pady=5)
-
-        inner = ttk.Frame(frame, padding=10)
-        inner.pack(fill=tk.X)
+        from pdf_editor.gui.components.cards import build_card_grid
 
         ttk.Label(
-            inner,
-            text="Click a button below → follow prompts to execute operations.",
-            font=("Segoe UI", 9), foreground="gray"
+            self,
+            text="Perform essential operations on your PDF documents with one-click tools.",
+            font=("Segoe UI", 10),
         ).pack(anchor=tk.W, pady=(0, 6))
 
-        ttk.Button(inner, text="Extract Pages", command=self.on_extract, style="primary.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="Rotate PDF", command=self.on_rotate, style="primary.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="Add Watermark", command=self.on_watermark, style="primary.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="Image(s) to PDF", command=self.on_images_to_pdf, style="primary.TButton").pack(fill=tk.X, pady=2)
+        cards_data = [
+            {
+                "title": "Extract Pages",
+                "description": "Extract specific page numbers or ranges (e.g., 1, 3-5, 7) into a new PDF document.",
+                "button_text": "Extract Pages",
+                "command": self.on_extract,
+                "icon": "✂️",
+                "bootstyle": "primary",
+            },
+            {
+                "title": "Rotate PDF",
+                "description": "Rotate all pages in document by 90°, 180°, or 270° clockwise.",
+                "button_text": "Rotate PDF",
+                "command": self.on_rotate,
+                "icon": "🔄",
+                "bootstyle": "primary",
+            },
+            {
+                "title": "Add Watermark",
+                "description": "Overlay a transparent watermark PDF across all pages of your source document.",
+                "button_text": "Watermark PDF",
+                "command": self.on_watermark,
+                "icon": "💧",
+                "bootstyle": "primary",
+            },
+            {
+                "title": "Image(s) to PDF",
+                "description": "Combine multiple image files (PNG, JPG, WEBP) into a clean single PDF file.",
+                "button_text": "Convert Images",
+                "command": self.on_images_to_pdf,
+                "icon": "🖼️",
+                "bootstyle": "success",
+            },
+        ]
 
-        hints = ttk.LabelFrame(self, text="What each operation needs")
-        hints.pack(fill=tk.X, pady=5)
+        build_card_grid(self, cards_data, columns=2)
 
-        hints_inner = ttk.Frame(hints, padding=10)
-        hints_inner.pack(fill=tk.X)
-
-        for txt in [
-            "Extract — Select a PDF → enter page numbers (e.g. 1,3-5,7) → save",
-            "Rotate — Select a PDF → pick angle (90°/180°/270°) → save",
-            "Watermark — Select a PDF → select watermark PDF → save",
-            "Image(s) to PDF — Select image files → save as PDF",
-        ]:
-            ttk.Label(hints_inner, text=f"  \u2022 {txt}", font=("Segoe UI", 9)).pack(anchor=tk.W)
 
     def on_extract(self) -> None:
         inp = self.app_state.get_input_file("Select PDF to Extract Pages")

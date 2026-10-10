@@ -25,14 +25,34 @@ class SignatureTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        frame = ttk.LabelFrame(self, text="Digital Signature")
-        frame.pack(fill=tk.X, pady=5)
+        from pdf_editor.gui.components.cards import build_card_grid
 
-        inner = ttk.Frame(frame, padding=10)
-        inner.pack(fill=tk.X)
+        ttk.Label(
+            self,
+            text="Upload a signature image and place it precisely on any PDF page visually.",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=(0, 6))
 
-        ttk.Button(inner, text="Upload Signature Image", command=self.on_upload_signature, style="info.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="Add Digital Signature", command=self.on_add_signature, style="info.TButton").pack(fill=tk.X, pady=2)
+        cards_data = [
+            {
+                "title": "Upload Signature Image",
+                "description": "Upload a transparent PNG or JPG image signature from your computer.",
+                "button_text": "Upload Signature",
+                "command": self.on_upload_signature,
+                "icon": "🖼️",
+                "bootstyle": "info",
+            },
+            {
+                "title": "Place Signature on PDF",
+                "description": "Open visual interactive signature placer to position and scale signature on target page.",
+                "button_text": "Place Signature",
+                "command": self.on_add_signature,
+                "icon": "✍️",
+                "bootstyle": "info",
+            },
+        ]
+
+        build_card_grid(self, cards_data, columns=2)
 
     def on_upload_signature(self) -> None:
         path = filedialog.askopenfilename(

@@ -63,54 +63,67 @@ class PDFEditorApp:
         self.window.bind("<Control-minus>", lambda e: self.preview_tab.zoom_out())
 
     def _build_ui(self) -> None:
-        root = ttk.Frame(self.window, padding=10)
+        root = ttk.Frame(self.window, padding=12)
         root.pack(fill=tk.BOTH, expand=True)
 
-        # Top Bar
-        top_bar = ttk.Frame(root)
-        top_bar.pack(fill=tk.X, pady=(0, 4))
+        # Header Card Bar
+        header_card = ttk.Frame(root)
+        header_card.pack(fill=tk.X, pady=(0, 6))
 
-        ttk.Label(top_bar, text=__app_name__, font=("Segoe UI", 20, "bold")).pack(side=tk.LEFT)
-        ttk.Label(top_bar, text=f"v{__version__}", font=("Segoe UI", 9),
-                  bootstyle="secondary").pack(side=tk.LEFT, padx=(6, 0), anchor=tk.S)
+        # Title & Badges
+        title_frame = ttk.Frame(header_card)
+        title_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        right_frame = ttk.Frame(top_bar)
-        right_frame.pack(side=tk.RIGHT)
+        ttk.Label(title_frame, text=__app_name__, font=("Segoe UI", 20, "bold")).pack(side=tk.LEFT)
+        ttk.Label(title_frame, text=f"v{__version__}", font=("Segoe UI", 9, "bold"),
+                  bootstyle="primary-inverse").pack(side=tk.LEFT, padx=(8, 4), anchor=tk.CENTER)
+        ttk.Label(title_frame, text="⚡ PyMuPDF Engine", font=("Segoe UI", 8),
+                  bootstyle="info").pack(side=tk.LEFT, padx=(4, 0), anchor=tk.CENTER)
+
+        # Right Action Toolbar
+        right_toolbar = ttk.Frame(header_card)
+        right_toolbar.pack(side=tk.RIGHT)
 
         self._dark_mode_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            right_frame, text="Dark Mode", variable=self._dark_mode_var,
+            right_toolbar, text="Dark Mode 🌙", variable=self._dark_mode_var,
             command=self._toggle_dark_mode, bootstyle="round-toggle"
-        ).pack(side=tk.RIGHT, padx=8)
+        ).pack(side=tk.RIGHT, padx=6)
 
-        ttk.Button(right_frame, text="Undo (Ctrl+Z)", command=self._on_undo,
-                   bootstyle="outline-secondary", width=12).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(right_toolbar, text="↺ Undo (Ctrl+Z)", command=self._on_undo,
+                   bootstyle="outline-secondary", width=14).pack(side=tk.RIGHT, padx=3)
 
-        ttk.Button(right_frame, text="History", command=lambda: show_history_dialog(self.app_state),
-                   bootstyle="outline-secondary", width=8).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(right_toolbar, text="📜 History", command=lambda: show_history_dialog(self.app_state),
+                   bootstyle="outline-secondary", width=10).pack(side=tk.RIGHT, padx=3)
 
-        ttk.Button(right_frame, text="Recent Files",
+        ttk.Button(right_toolbar, text="📁 Recent Files",
                    command=lambda: show_recent_files_dialog(self.app_state, self.preview_tab.open_pdf),
-                   bootstyle="outline-info", width=12).pack(side=tk.RIGHT, padx=4)
+                   bootstyle="outline-info", width=13).pack(side=tk.RIGHT, padx=3)
 
-        # Active File Banner
-        active_bar = ttk.Frame(root)
-        active_bar.pack(fill=tk.X, pady=(0, 4))
-        ttk.Label(active_bar, textvariable=self.app_state.active_file_var,
-                  font=("Segoe UI", 9, "bold"), bootstyle="info").pack(side=tk.LEFT, padx=2)
+        # Active File & Progress Card
+        status_card = ttk.LabelFrame(root, text="Active Workspace File & Progress")
+        status_card.pack(fill=tk.X, pady=(0, 6))
 
-        # Progress Bar
-        prog_frame = ttk.Frame(root)
-        prog_frame.pack(fill=tk.X, pady=(0, 4))
+        status_inner = ttk.Frame(status_card, padding=6)
+        status_inner.pack(fill=tk.X)
+
+        file_label_frame = ttk.Frame(status_inner)
+        file_label_frame.pack(fill=tk.X, pady=(0, 4))
+        ttk.Label(file_label_frame, text="📄 Active File:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Label(file_label_frame, textvariable=self.app_state.active_file_var,
+                  font=("Segoe UI", 9, "bold"), bootstyle="primary").pack(side=tk.LEFT)
+
+        prog_frame = ttk.Frame(status_inner)
+        prog_frame.pack(fill=tk.X)
         self._progress_bar = ttk.Progressbar(
             prog_frame, variable=self.app_state.progress_var, maximum=100, bootstyle="success-striped"
         )
         self._progress_bar.pack(fill=tk.X, side=tk.LEFT, expand=True, padx=(0, 8))
-        ttk.Label(prog_frame, textvariable=self.app_state.progress_text, font=("Segoe UI", 8)).pack(side=tk.RIGHT)
+        ttk.Label(prog_frame, textvariable=self.app_state.progress_text, font=("Segoe UI", 8, "bold")).pack(side=tk.RIGHT)
 
         # Notebook (Tabs)
         self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=(4, 4))
+        self.notebook.pack(fill=tk.BOTH, expand=True, pady=(2, 4))
 
         # Instantiate Fragmented Modular Tabs
         self.preview_tab = PreviewTab(self.notebook, self.app_state)
@@ -125,32 +138,24 @@ class PDFEditorApp:
         self.compare_tab = CompareTab(self.notebook, self.app_state)
         self.metadata_tab = MetadataTab(self.notebook, self.app_state)
 
-        # Add tabs to Notebook
-        self.notebook.add(self.preview_tab, text="  PDF Preview & Text Edit  ")
-        self.notebook.add(self.vmerge_tab, text="  Visual Merge  ")
-        self.notebook.add(self.reorder_tab, text="  Visual Reorder  ")
-        self.notebook.add(self.basic_tab, text="  Basic  ")
-        self.notebook.add(self.advanced_tab, text="  Advanced  ")
-        self.notebook.add(self.convert_tab, text="  Convert  ")
-        self.notebook.add(self.security_tab, text="  Security  ")
-        self.notebook.add(self.signature_tab, text="  Signature  ")
-        self.notebook.add(self.batch_tab, text="  Batch Ops  ")
-        self.notebook.add(self.compare_tab, text="  Compare  ")
-        self.notebook.add(self.metadata_tab, text="  Metadata  ")
-
-        # File Info Panel
-        info_frame = ttk.LabelFrame(root, text="File Information")
-        info_frame.pack(fill=tk.X, pady=3)
-        info_inner = ttk.Frame(info_frame, padding=4)
-        info_inner.pack(fill=tk.X)
-        self.file_info_text = tk.Text(info_inner, height=3, wrap=tk.WORD, state=tk.DISABLED, font=("Consolas", 9))
-        self.file_info_text.pack(fill=tk.X)
+        # Add tabs to Notebook with rich icon titles
+        self.notebook.add(self.preview_tab, text=" 👁️ Preview & Edit ")
+        self.notebook.add(self.vmerge_tab, text=" 🔀 Visual Merge ")
+        self.notebook.add(self.reorder_tab, text=" 📑 Visual Reorder ")
+        self.notebook.add(self.basic_tab, text=" ⚡ Basic ")
+        self.notebook.add(self.advanced_tab, text=" ⚙️ Advanced ")
+        self.notebook.add(self.convert_tab, text=" 🔄 Convert ")
+        self.notebook.add(self.security_tab, text=" 🔒 Security ")
+        self.notebook.add(self.signature_tab, text=" ✍️ Signature ")
+        self.notebook.add(self.batch_tab, text=" 📦 Batch Ops ")
+        self.notebook.add(self.compare_tab, text=" ⚖️ Compare ")
+        self.notebook.add(self.metadata_tab, text=" ℹ️ Metadata ")
 
         # Status Bar
         status_frame = ttk.Frame(root)
-        status_frame.pack(fill=tk.X, pady=(3, 0))
-        ttk.Label(status_frame, textvariable=self.app_state.status_var, font=("Segoe UI", 9)).pack(side=tk.LEFT)
-        ttk.Label(status_frame, text="Drop PDF files anywhere!", font=("Segoe UI", 8), bootstyle="secondary").pack(side=tk.RIGHT)
+        status_frame.pack(fill=tk.X, pady=(2, 0))
+        ttk.Label(status_frame, textvariable=self.app_state.status_var, font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT)
+        ttk.Label(status_frame, text="💡 Tip: Drag & drop PDF files anywhere!", font=("Segoe UI", 8), bootstyle="info").pack(side=tk.RIGHT)
 
     def _on_undo(self) -> None:
         entry = self.app_state.history.undo_last()
@@ -167,11 +172,26 @@ class PDFEditorApp:
         new_theme = "darkly" if self._dark_mode else "cosmo"
         self._current_theme = new_theme
         self.window.style.theme_use(new_theme)
-        bg = "#2b2b2b" if self._dark_mode else "#f0f0f0"
-        self.preview_tab.canvas.config(bg=bg)
-        self.compare_tab.canvas_a.config(bg=bg)
-        self.compare_tab.canvas_b.config(bg=bg)
-        self.app_state.update_status(f"Theme: {new_theme}")
+
+        canvas_bg = "#2b2b2b" if self._dark_mode else "#f0f0f0"
+        grid_bg = "#1e1e1e" if self._dark_mode else "#f8f9fa"
+        text_bg = "#1e1e1e" if self._dark_mode else "#ffffff"
+        text_fg = "#ffffff" if self._dark_mode else "#000000"
+
+        # Update preview & comparison canvases
+        self.preview_tab.canvas.config(bg=canvas_bg)
+        self.compare_tab.canvas_a.config(bg=canvas_bg)
+        self.compare_tab.canvas_b.config(bg=canvas_bg)
+
+        # Update visual gallery workspace canvases
+        self.vmerge_tab.canvas.config(bg=grid_bg)
+        self.reorder_tab.canvas.config(bg=grid_bg)
+
+        # Update native Text and Listbox widgets for high contrast
+        self.compare_tab.result_text.config(bg=text_bg, fg=text_fg, insertbackground=text_fg)
+        self.batch_tab.listbox.config(bg=text_bg, fg=text_fg, selectbackground="#0d6efd", selectforeground="#ffffff")
+
+        self.app_state.update_status(f"Theme switched to: {new_theme.capitalize()}")
 
     def _setup_drag_and_drop(self) -> None:
         try:

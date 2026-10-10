@@ -27,7 +27,13 @@ def show_recent_files_dialog(app_state: AppState, open_callback: Callable[[str],
     win.geometry("500x350")
     win.grab_set()
 
-    lb = tk.Listbox(win, font=("Consolas", 9))
+    is_dark = (ttk.Style().theme.name == "darkly")
+    lb = tk.Listbox(
+        win, font=("Consolas", 9),
+        bg="#1e1e1e" if is_dark else "#ffffff",
+        fg="#ffffff" if is_dark else "#000000",
+        selectbackground="#0d6efd", selectforeground="#ffffff"
+    )
     sb = ttk.Scrollbar(win, command=lb.yview)
     lb.config(yscrollcommand=sb.set)
     lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0), pady=8)

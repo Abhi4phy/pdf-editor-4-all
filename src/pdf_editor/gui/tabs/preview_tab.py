@@ -49,35 +49,42 @@ class PreviewTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        # Row 1: Top Navigation Controls
-        ctrl1 = ttk.Frame(self)
-        ctrl1.pack(fill=tk.X, pady=(0, 4))
+        # Card 1: Navigation & Save Bar
+        nav_card = ttk.LabelFrame(self, text="Document Navigation & Export")
+        nav_card.pack(fill=tk.X, pady=(0, 4), padx=2)
+
+        ctrl1 = ttk.Frame(nav_card, padding=4)
+        ctrl1.pack(fill=tk.X)
 
         ttk.Button(
-            ctrl1, text="Open PDF (Ctrl+O)", command=self.open_pdf,
-            bootstyle="primary", width=15
+            ctrl1, text="📂 Open PDF (Ctrl+O)", command=self.open_pdf,
+            bootstyle="primary", width=17
         ).pack(side=tk.LEFT, padx=2)
 
         self.save_btn = ttk.Button(
-            ctrl1, text="Save PDF As...", command=self.save_pdf,
-            bootstyle="success", width=14
+            ctrl1, text="💾 Save PDF As...", command=self.save_pdf,
+            bootstyle="success", width=15
         )
         self.save_btn.pack(side=tk.LEFT, padx=2)
 
         ttk.Label(ctrl1, textvariable=self.unsaved_status_var, font=("Segoe UI", 9, "bold"), foreground="orange").pack(side=tk.LEFT, padx=6)
 
-        ttk.Label(ctrl1, text="Page:").pack(side=tk.LEFT, padx=(12, 2))
+        ttk.Separator(ctrl1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=8)
+
+        ttk.Label(ctrl1, text="Page:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(4, 2))
         self.page_spin = ttk.Spinbox(
-            ctrl1, from_=1, to=1, width=5, textvariable=self.page_var
+            ctrl1, from_=1, to=1, width=4, textvariable=self.page_var
         )
         self.page_spin.pack(side=tk.LEFT, padx=2)
-        self.total_label = ttk.Label(ctrl1, text="/ 0")
+        self.total_label = ttk.Label(ctrl1, text="/ 0", font=("Segoe UI", 9))
         self.total_label.pack(side=tk.LEFT, padx=2)
 
-        ttk.Button(ctrl1, text="<", command=self.prev_page, width=3).pack(side=tk.LEFT, padx=1)
-        ttk.Button(ctrl1, text=">", command=self.next_page, width=3).pack(side=tk.LEFT, padx=1)
+        ttk.Button(ctrl1, text="◀", command=self.prev_page, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
+        ttk.Button(ctrl1, text="▶", command=self.next_page, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
 
-        ttk.Label(ctrl1, text="Zoom:").pack(side=tk.LEFT, padx=(12, 2))
+        ttk.Separator(ctrl1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=8)
+
+        ttk.Label(ctrl1, text="Zoom:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(4, 2))
         ttk.Scale(
             ctrl1, from_=0.25, to=4.0, variable=self.zoom_var,
             orient=tk.HORIZONTAL, length=120
@@ -85,23 +92,23 @@ class PreviewTab(ttk.Frame):
 
         ttk.Button(ctrl1, text="Fit", command=lambda: self.zoom_var.set(1.0),
                    bootstyle="outline", width=4).pack(side=tk.LEFT, padx=2)
-        ttk.Button(ctrl1, text="+", command=self.zoom_in, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
-        ttk.Button(ctrl1, text="-", command=self.zoom_out, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
+        ttk.Button(ctrl1, text="➕", command=self.zoom_in, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
+        ttk.Button(ctrl1, text="➖", command=self.zoom_out, width=3, bootstyle="outline").pack(side=tk.LEFT, padx=1)
 
-        # Row 2: In-Place Text Editing Bar with Font Size & Style Options
-        ctrl2 = ttk.LabelFrame(self, text="In-Place Text Editing & Formatting")
-        ctrl2.pack(fill=tk.X, pady=(4, 4), padx=2)
+        # Card 2: In-Place Text Editing Bar with Font Size & Style Options
+        ctrl2 = ttk.LabelFrame(self, text="✍️ Live In-Place Text Editor & Font Options")
+        ctrl2.pack(fill=tk.X, pady=(2, 4), padx=2)
 
         inner2 = ttk.Frame(ctrl2, padding=4)
         inner2.pack(fill=tk.X)
 
-        ttk.Label(inner2, text="Find:").pack(side=tk.LEFT, padx=(4, 2))
-        ttk.Entry(inner2, textvariable=self.find_var, width=13).pack(side=tk.LEFT, padx=2)
+        ttk.Label(inner2, text="Find:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(4, 2))
+        ttk.Entry(inner2, textvariable=self.find_var, width=12).pack(side=tk.LEFT, padx=2)
 
-        ttk.Label(inner2, text="Replace:").pack(side=tk.LEFT, padx=(6, 2))
-        ttk.Entry(inner2, textvariable=self.replace_var, width=13).pack(side=tk.LEFT, padx=2)
+        ttk.Label(inner2, text="Replace:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(6, 2))
+        ttk.Entry(inner2, textvariable=self.replace_var, width=12).pack(side=tk.LEFT, padx=2)
 
-        ttk.Label(inner2, text="Size:").pack(side=tk.LEFT, padx=(6, 2))
+        ttk.Label(inner2, text="Size:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(6, 2))
         self.font_size_combo = ttk.Combobox(
             inner2, textvariable=self.font_size_var,
             values=["Auto", "8", "9", "10", "11", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"],
@@ -115,18 +122,18 @@ class PreviewTab(ttk.Frame):
         ttk.Checkbutton(inner2, text="S̶", variable=self.cross_var, bootstyle="outline-toolbutton", width=3).pack(side=tk.LEFT, padx=1)
 
         ttk.Button(
-            inner2, text="Preview Replace", command=self.on_in_place_replace,
+            inner2, text="⚡ Preview Replace", command=self.on_in_place_replace,
             bootstyle="warning", width=16
         ).pack(side=tk.LEFT, padx=6)
 
         ttk.Checkbutton(
-            inner2, text="✎ Select & Edit Box",
+            inner2, text="✎ Drag & Edit Region",
             variable=self.text_edit_mode_var, bootstyle="outline-toolbutton"
         ).pack(side=tk.LEFT, padx=6)
 
         ttk.Label(
             inner2, text="(Exact baseline alignment)",
-            font=("Segoe UI", 8), foreground="gray"
+            font=("Segoe UI", 8, "italic"), bootstyle="info"
         ).pack(side=tk.RIGHT, padx=4)
 
         # Canvas Frame
@@ -378,10 +385,16 @@ class PreviewTab(ttk.Frame):
         ttk.Label(
             win,
             text="Original text in box is erased and replaced in-place at exact baseline origin.",
-            font=("Segoe UI", 9), foreground="gray"
+            font=("Segoe UI", 9), bootstyle="info"
         ).pack(pady=(0, 4))
 
-        tb = tk.Text(win, height=10, font=("Consolas", 10), wrap=tk.WORD)
+        is_dark = (ttk.Style().theme.name == "darkly")
+        tb = tk.Text(
+            win, height=10, font=("Consolas", 10), wrap=tk.WORD,
+            bg="#1e1e1e" if is_dark else "#ffffff",
+            fg="#ffffff" if is_dark else "#000000",
+            insertbackground="#ffffff" if is_dark else "#000000"
+        )
         tb.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
         tb.insert("1.0", existing_text.strip())
 

@@ -23,15 +23,42 @@ class ConvertTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        frame = ttk.LabelFrame(self, text="Convert PDF")
-        frame.pack(fill=tk.X, pady=5)
+        from pdf_editor.gui.components.cards import build_card_grid
 
-        inner = ttk.Frame(frame, padding=10)
-        inner.pack(fill=tk.X)
+        ttk.Label(
+            self,
+            text="Export and convert PDF documents into Word, High-Res Images, or Raw Text.",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=(0, 6))
 
-        ttk.Button(inner, text="To Word Document", command=self.on_pdf_to_word, style="success.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="To Images", command=self.on_pdf_to_images, style="success.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="To Text File", command=self.on_pdf_to_text, style="success.TButton").pack(fill=tk.X, pady=2)
+        cards_data = [
+            {
+                "title": "Convert to Word",
+                "description": "Convert PDF layout and formatted text directly into Microsoft Word (.docx) format.",
+                "button_text": "Export to Word",
+                "command": self.on_pdf_to_word,
+                "icon": "📝",
+                "bootstyle": "success",
+            },
+            {
+                "title": "Convert to Images",
+                "description": "Render each page into high-resolution PNG image files inside an output directory.",
+                "button_text": "Export to Images",
+                "command": self.on_pdf_to_images,
+                "icon": "🖼️",
+                "bootstyle": "success",
+            },
+            {
+                "title": "Convert to Text",
+                "description": "Extract plain unformatted text content into a standard text document (.txt).",
+                "button_text": "Export to Text",
+                "command": self.on_pdf_to_text,
+                "icon": "📄",
+                "bootstyle": "success",
+            },
+        ]
+
+        build_card_grid(self, cards_data, columns=3)
 
     def on_pdf_to_word(self) -> None:
         inp = self.app_state.get_input_file("Select PDF to Convert to Word")

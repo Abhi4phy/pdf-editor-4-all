@@ -23,14 +23,34 @@ class SecurityTab(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        frame = ttk.LabelFrame(self, text="Security Options")
-        frame.pack(fill=tk.X, pady=5)
+        from pdf_editor.gui.components.cards import build_card_grid
 
-        inner = ttk.Frame(frame, padding=10)
-        inner.pack(fill=tk.X)
+        ttk.Label(
+            self,
+            text="Protect sensitive PDF documents with AES encryption or remove protection passwords.",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=(0, 6))
 
-        ttk.Button(inner, text="Encrypt PDF", command=self.on_encrypt, style="warning.TButton").pack(fill=tk.X, pady=2)
-        ttk.Button(inner, text="Remove Password", command=self.on_remove_password, style="warning.TButton").pack(fill=tk.X, pady=2)
+        cards_data = [
+            {
+                "title": "Encrypt PDF",
+                "description": "Password protect PDF file with AES-256 bit encryption to restrict unauthorized opening.",
+                "button_text": "Encrypt Document",
+                "command": self.on_encrypt,
+                "icon": "🔐",
+                "bootstyle": "warning",
+            },
+            {
+                "title": "Remove Password",
+                "description": "Decrypt an encrypted PDF document using current password to save an open unprotected copy.",
+                "button_text": "Remove Password",
+                "command": self.on_remove_password,
+                "icon": "🔓",
+                "bootstyle": "warning",
+            },
+        ]
+
+        build_card_grid(self, cards_data, columns=2)
 
     def on_encrypt(self) -> None:
         inp = self.app_state.get_input_file("Select PDF to Encrypt")
